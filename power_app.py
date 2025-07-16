@@ -4,8 +4,23 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
-from scipy.optimize import brentq
-from scipy.stats import norm
+from scipy.stats import norm, t
+
+
+
+def validate_effect_size_direction_power(effect_size, alternative):
+    if alternative == 'larger' and effect_size < 0:
+        return "**WARNING:** Effect size is negative but test type is 'larger'. Consider flipping the sign or changing the test direction."
+    elif alternative == 'smaller' and effect_size > 0:
+        return "**WARNING:** Effect size is positive but test type is 'smaller'. Consider flipping the sign or changing the test direction."
+    return None
+
+def validate_effect_size_direction_sample(effect_size, alternative):
+    if alternative == 'larger' and effect_size < 0:
+        return "**WARNING:** Effect size is negative but test type is 'larger'. Sample sizes are not accurate, flip the direction of one of effect size or test type."
+    elif alternative == 'smaller' and effect_size > 0:
+        return "**WARNING:** Effect size is positive but test type is 'smaller'. Sample sizes are not accurate, flip the direction of one of effect size or test type."
+    return None
 
 # --- Power Calculation Functions ---
 def power_two_sample_ttest(effect_size, n1, n2, alpha=0.05, alternative='two-sided'):
@@ -112,14 +127,23 @@ def plot_power_curve(effect_size, alpha=0.05, power_target=0.8, alternative='two
 
 
 # --- Effect Size Solver ---
-def effect_size_two_sample_ttest(power_target, n_per_group, alpha=0.05, alternative='two-sided'):
-    """
-    Solve for the minimum detectable effect size (Cohen's d) given power, sample size, and alpha.
-    """
-    def power_diff(d):
-        return power_two_sample_ttest(d, n_per_group, alpha=alpha, alternative=alternative) - power_target
+def effect_size_two_sample_ttest(n1, n2, power_target=0.8, alpha=0.05, alternative='two-sided'):
+    df = n1 + n2 - 2
 
-    return brentq(power_diff, a=1e-6, b=5.0, xtol=1e-4)
+    if alternative == 'two-sided':
+        t_alpha = t.ppf(1 - alpha / 2, df)
+        t_beta = t.ppf(power_target, df)
+    elif alternative == 'larger':
+        t_alpha = t.ppf(1 - alpha, df)
+        t_beta = t.ppf(power_target, df)
+    else:
+        t_alpha = -1 * t.ppf(1 - alpha, df)
+        t_beta = -1 * t.ppf(power_target, df)
+
+    se_term = np.sqrt(1/n1 + 1/n2)
+    d_min = (t_alpha + t_beta) * se_term
+    
+    return d_min
 
 
 # --- Streamlit Interface ---
@@ -127,16 +151,72 @@ st.title("Two Sample t-Test Power Calculator")
 
 # Sidebar input options
 st.sidebar.header("Input Parameters")
-effect_size = round(st.sidebar.number_input("Effect Size (Cohen's d)", min_value=-2.0, max_value=2.0, value=0.5, step=0.01, format="%.2f"), 4)
 alpha = round(st.sidebar.number_input("Significance Level (alpha)", min_value=0.001, max_value=0.3, value=0.05, step=0.01, format="%.2f"), 4)
 alternative = st.sidebar.selectbox("Test Type", options=['two-sided', 'larger', 'smaller'])
+
+with st.expander("What is Effect Size (Cohen's d)?"):
+    st.markdown("""
+**Effect size**, measured by **Cohen’s d**, tells us **how big the true difference is between two groups**, like a treatment group and a control group.
+                """)
+    
+    st.markdown("The formula is:")
+    st.latex(r"d = \frac{\mu_1 - \mu_2}{\sigma}")
+
+    st.markdown("""
+Where:
+- **μ₁** and **μ₂** are the means of the two groups  
+- **σ** is the pooled standard deviation 
+
+---
+
+When you enter an effect size you're saying:
+
+> “This is the size of the difference I expect or want to be able to detect between the two groups.”
+
+Effect size is measured in **standard deviation units**, so:
+- A **small effect** might be barely noticeable (e.g., d = 0.2)
+- A **medium effect** is a moderate difference (e.g., d = 0.5)
+- A **large effect** is a big difference (e.g., d = 0.8 or more)
+
+---
+
+**In a power calculation**, the effect size helps answer:
+> _How many samples do I need to detect this difference with high confidence?_
+
+Or, for calculating power:
+> _How likely am I to detect a difference of this size with my current sample size?_
+
+So the **effect size you input** defines the size of difference you're trying to detect **with certainty (power)**.
+""")
+
+
+# Display null and alternative hypotheses
+st.markdown("### Hypotheses")
+
+null_hypothesis = "H₀: μ₁ = μ₂"
+if alternative == "two-sided":
+    alt_hypothesis = "H₁: μ₁ ≠ μ₂"
+elif alternative == "larger":
+    alt_hypothesis = "H₁: μ₁ > μ₂"
+elif alternative == "smaller":
+    alt_hypothesis = "H₁: μ₁ < μ₂"
+
+st.latex(null_hypothesis)
+st.latex(alt_hypothesis)
 
 # Power or sample size mode
 mode = st.radio("What do you want to calculate?", options=["Power", "Sample Size", "Effect Size"])
 
 if mode == "Power":
+
     n1 = round(st.number_input("Group 1 Sample Size", min_value=2, value=50), 4)
     n2 = round(st.number_input("Group 2 Sample Size", min_value=2, value=50), 4)
+    effect_size = round(st.number_input("Effect Size (Cohen's d)", min_value=-2.0, max_value=2.0, value=0.5, step=0.01, format="%.2f"), 4)
+   
+    warning_msg = validate_effect_size_direction_power(effect_size, alternative)
+    if warning_msg:
+        st.warning(warning_msg)
+
     power = power_two_sample_ttest(effect_size, n1, n2, alpha, alternative)
     st.success(f"Estimated Power: **{power:.3f}**")
 
@@ -144,20 +224,34 @@ if mode == "Power":
         plot_power_curve_with_distributions(effect_size, n1, n2, alpha, alternative)
 
 elif mode == "Sample Size":
+
     power_target = round(st.number_input("Desired Power", min_value=0.01, max_value=0.99, value=0.8, step=0.01), 4)
+    effect_size = round(st.number_input("Effect Size (Cohen's d)", min_value=-2.0, max_value=2.0, value=0.5, step=0.01, format="%.2f"), 4)
+
+    warning_msg = validate_effect_size_direction_sample(effect_size, alternative)
+    if warning_msg:
+        st.warning(warning_msg)
+        
     sample_size_ratio = round(st.number_input("Ratio of Group 1 Size to Group 2 Size", min_value=0.01, max_value=1000.0, value=1.0, step=0.1), 4)
     try:
         n1_required, n2_required = sample_size_two_sample_ttest(effect_size, power_target, alpha, alternative, sample_size_ratio)
         st.success(f"Required Sample Sizes:\n- Group 1: **{int(n1_required)}**\n- Group 2: **{int(n2_required)}**")
     except Exception as e:
         st.error(f"Error computing sample size: {e}")
-
-    if st.checkbox("Show Power Curve", value=True):
-        max_n1 = st.number_input("Max Sample Size to Plot", min_value=2.0, max_value=100000.0, value=200.0, step=1.0)
-        plot_power_curve(effect_size, alpha=alpha, power_target=power_target, alternative=alternative, allocation_ratio=sample_size_ratio, max_n1=max_n1)
+    
+    if warning_msg:
+        pass
+    else:
+        if st.checkbox("Show Power Curve", value=True):
+            max_n1 = st.number_input("Max Sample Size to Plot", min_value=2.0, max_value=100000.0, value=200.0, step=1.0)
+            plot_power_curve(effect_size, alpha=alpha, power_target=power_target,
+                             alternative=alternative, allocation_ratio=sample_size_ratio, max_n1=max_n1)
 
 elif mode == "Effect Size":
-    n_per_group = st.number_input("Sample Size per Group", min_value=2, value=50)
-    power_target = st.slider("Desired Power", min_value=0.01, max_value=0.99, value=0.8, step=0.01)
-    effect_size = effect_size_two_sample_ttest(power_target, n_per_group, alpha, alternative)
+
+    n1 = round(st.number_input("Group 1 Sample Size", min_value=2, value=50), 4)
+    n2 = round(st.number_input("Group 2 Sample Size", min_value=2, value=50), 4)
+    power_target = round(st.number_input("Desired Power", min_value=0.01, max_value=0.99, value=0.8, step=0.01), 4)
+
+    effect_size = effect_size_two_sample_ttest(n1, n2, power_target, alpha, alternative)
     st.success(f"Effect Size: **{effect_size:.3f}**")
