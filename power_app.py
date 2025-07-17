@@ -224,6 +224,7 @@ def effect_size_two_sample_ttest(n1, n2, power_target=0.8, alpha=0.05, alternati
 
 
 # --- Streamlit Interface ---
+st.set_page_config(page_title="Power Calculator")
 st.title("Two Sample t-Test Power Calculator")
 
 # Sidebar input options
