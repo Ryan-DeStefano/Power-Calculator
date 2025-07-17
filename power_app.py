@@ -224,8 +224,18 @@ def effect_size_two_sample_ttest(n1, n2, power_target=0.8, alpha=0.05, alternati
 
 
 # --- Streamlit Interface ---
-st.set_page_config(page_title="Power Calculator")
-st.title("Two Sample t-Test Power Calculator")
+# Set initial page config (optional, still good for favicon)
+st.set_page_config(page_title="Power Calculator", page_icon="📊")
+
+# Override the tab title with JS to remove the appended '· Streamlit'
+st.markdown(
+    """
+    <script>
+    document.title = "Power Calculator";
+    </script>
+    """,
+    unsafe_allow_html=True,
+)st.title("Two Sample t-Test Power Calculator")
 
 # Sidebar input options
 st.sidebar.header("Input Parameters")
