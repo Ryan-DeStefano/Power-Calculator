@@ -235,7 +235,9 @@ st.markdown(
     </script>
     """,
     unsafe_allow_html=True,
-)st.title("Two Sample t-Test Power Calculator")
+)
+
+st.title("Two Sample t-Test Power Calculator")
 
 # Sidebar input options
 st.sidebar.header("Input Parameters")
