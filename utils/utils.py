@@ -2,10 +2,17 @@ import streamlit as st
 
 
 
+def validate_effect_size_direction_power(effect_size, alternative):
+    if alternative == 'larger' and effect_size < 0:
+        return "**WARNING:** Effect size is negative but test type is 'larger'. Consider flipping the sign or changing the test direction."
+    elif alternative == 'smaller' and effect_size > 0:
+        return "**WARNING:** Effect size is positive but test type is 'smaller'. Consider flipping the sign or changing the test direction."
+    return None
+
 def input_sample_size(group_label, default = 50):
     return round(
         st.number_input(
-            label=f"Group {group_label} Sample Size",
+            label=group_label,
             min_value=2,
             value=default
         ),

@@ -7,13 +7,6 @@ import streamlit as st
 
 
 # --- Validate Direction Functions ---
-def validate_effect_size_direction_power(effect_size, alternative):
-    if alternative == 'larger' and effect_size < 0:
-        return "**WARNING:** Effect size is negative but test type is 'larger'. Consider flipping the sign or changing the test direction."
-    elif alternative == 'smaller' and effect_size > 0:
-        return "**WARNING:** Effect size is positive but test type is 'smaller'. Consider flipping the sign or changing the test direction."
-    return None
-
 def validate_effect_size_direction_sample_equal_variance(effect_size, alternative):
     if alternative == 'larger' and effect_size < 0:
         return "**WARNING:** Effect size is negative but test type is 'larger'. Sample sizes are not accurate, flip the direction of one of effect size or test type."
@@ -79,7 +72,7 @@ def power_two_sample_ttest_unequal_variance(n1, n2, mu1, mu2, s1, s2, alpha=0.05
     
     return power, effect_size, df
 
-def plot_power_curve_with_distributions(effect_size, n1, n2, df, alpha=0.05, alternative='two-sided', normal_approx_threshold=350):
+def plot_power_curve_with_distributions_two_sample_ttest(effect_size, n1, n2, df, alpha=0.05, alternative='two-sided', normal_approx_threshold=350):
     ncp = effect_size * np.sqrt((n1 * n2) / (n1 + n2))
 
     use_normal_approx = df > normal_approx_threshold
@@ -161,7 +154,7 @@ def sample_size_two_sample_ttest_unequal_variance(mu1, mu2, s1, s2, power_target
 
     return np.ceil(n1), np.ceil(n2)
 
-def plot_power_curve_equal_variance(effect_size, alpha=0.05, power_target=0.8, alternative='two-sided', allocation_ratio=1.0, max_n1=200):
+def plot_power_curve_two_sample_ttest_equal_variance(effect_size, alpha=0.05, power_target=0.8, alternative='two-sided', allocation_ratio=1.0, max_n1=200):
     n1_values = np.arange(2, max_n1 + 1)
     power_values = []
 
@@ -181,7 +174,7 @@ def plot_power_curve_equal_variance(effect_size, alpha=0.05, power_target=0.8, a
     plt.tight_layout()
     st.pyplot(plt.gcf())
 
-def plot_power_curve_unequal_variance(mu1, mu2, s1, s2, alpha=0.05, power_target=0.8, alternative='two-sided', allocation_ratio=1.0, max_n1=200):
+def plot_power_curve_two_sample_ttest_unequal_variance(mu1, mu2, s1, s2, alpha=0.05, power_target=0.8, alternative='two-sided', allocation_ratio=1.0, max_n1=200):
     n1_values = np.arange(2, max_n1 + 1)
     power_values = []
 

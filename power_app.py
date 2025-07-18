@@ -92,8 +92,8 @@ mode = st.radio("What do you want to calculate?", options=["Power", "Sample Size
 
 if mode == "Power":
 
-    n1 = input_sample_size(group_label="1", default=50)
-    n2 = input_sample_size(group_label="2", default=50)
+    n1 = input_sample_size(group_label="Group 1 Sample Size", default=50)
+    n2 = input_sample_size(group_label="Group 2 Sample Size", default=50)
 
     if variance_type == "Equal Variances":
 
@@ -135,7 +135,7 @@ if mode == "Power":
     if st.button("Calculate Power"):
         st.success(f"Estimated Power: **{power:.3f}**")
 
-        plot_power_curve_with_distributions(
+        plot_power_curve_with_distributions_two_sample_ttest(
             effect_size=effect_size, 
             n1=n1, 
             n2=n2, 
@@ -213,7 +213,7 @@ elif mode == "Sample Size":
         else:
 
             if variance_type == "Equal Variances":
-                plot_power_curve_equal_variance(
+                plot_power_curve_two_sample_ttest_equal_variance(
                     effect_size=effect_size, 
                     alpha=alpha,
                     power_target=power_target,
@@ -222,7 +222,7 @@ elif mode == "Sample Size":
                     max_n1=n1_required*3)
                 
             else:
-                plot_power_curve_unequal_variance(
+                plot_power_curve_two_sample_ttest_unequal_variance(
                     mu1=mu1,
                     mu2=mu2,
                     s1=s1,
@@ -235,8 +235,8 @@ elif mode == "Sample Size":
                 
 elif mode == "Effect Size":
 
-    n1 = input_sample_size(group_label="1", default=50)
-    n2 = input_sample_size(group_label="2", default=50)
+    n1 = input_sample_size(group_label="Group 1 Sample Size", default=50)
+    n2 = input_sample_size(group_label="Group 2 Sample Size", default=50)
     
     power_target = input_power(default=0.8)
 
