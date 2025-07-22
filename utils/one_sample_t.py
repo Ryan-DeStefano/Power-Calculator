@@ -9,9 +9,9 @@ import streamlit as st
 # --- Validate Direction Functions ---
 def validate_effect_size_direction(effect_size, alternative):
     if alternative == 'larger' and effect_size < 0:
-        return "**WARNING:** Effect size is negative but test type is 'larger'. Sample sizes are not accurate, flip the direction of one of effect size or test type."
+        return "**WARNING:** Effect size is negative but test type is 'larger'. Sample size is not accurate, flip the direction of one of effect size or test type."
     elif alternative == 'smaller' and effect_size > 0:
-        return "**WARNING:** Effect size is positive but test type is 'smaller'. Sample sizes are not accurate, flip the direction of one of effect size or test type."
+        return "**WARNING:** Effect size is positive but test type is 'smaller'. Sample size is not accurate, flip the direction of one of effect size or test type."
     return None
 
 # --- Power Calculation Functions ---
@@ -86,7 +86,7 @@ def plot_power_curve_with_distributions_one_sample_ttest(effect_size, n, df, alp
     st.pyplot(plt.gcf())
 
 # --- Sample Size Functions ---
-def sample_size_one_sample_ttest_equal_variance(effect_size, power_target=0.8, alpha=0.05,
+def sample_size_one_sample_ttest(effect_size, power_target=0.8, alpha=0.05,
                                                 alternative='two-sided'):
     
     if effect_size == 0:

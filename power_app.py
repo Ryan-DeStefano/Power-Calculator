@@ -93,14 +93,20 @@ with tab[0]:
     st.latex(alt_hypothesis)
 
     # Power or sample size mode
-    mode = st.radio("What do you want to calculate?", options=["Power", "Sample Size", "Effect Size"])
+    mode = st.radio(
+        label="What do you want to calculate?", 
+        options=["Power", "Sample Size", "Effect Size"],
+        key="mode_one_sample_t"
+    )
 
     if mode == "Power":
 
         col1, col2 = st.columns(2)
 
-        n = input_sample_size(group_label="Sample Size", default=50)
-        effect_size = input_effect_size(default=0.5)
+        with col1:
+            n = input_sample_size(group_label="Sample Size", key="n_power_one_sample", default=50)
+        with col2:
+            effect_size = input_effect_size(key="effect_power_one_sample", default=0.5)
 
         power, df = power_one_sample_ttest(
             effect_size=effect_size, 
@@ -115,116 +121,74 @@ with tab[0]:
         if warning_msg:
             st.warning(warning_msg)
 
-        if st.button("Calculate Power"):
+        if st.button("Calculate Power", key="calc_power_one_sample"):
             st.success(f"Estimated Power: **{power:.3f}**")
 
-            plot_power_curve_with_distributions_two_sample_ttest(
+            plot_power_curve_with_distributions_one_sample_ttest(
                 effect_size=effect_size, 
-                n1=n1, 
-                n2=n2, 
+                n=n, 
                 df=df, 
                 alpha=alpha, 
                 alternative=alternative)
 
     elif mode == "Sample Size":
+        
+        col1, col2 = st.columns(2)
 
-        power_target = input_power(default=0.8)
-        sample_size_ratio = input_sample_ratio(default=1.0)
+        with col1:
+            power_target = input_power(key="power_sample_one_sample", default=0.8)
+        with col2:
+            effect_size = input_effect_size(key="effect_sample_one_sample", default=0.5)
 
-        if variance_type == "Equal Variances":
+        warning_msg = validate_effect_size_direction(
+            effect_size=effect_size,
+            alternative=alternative)
+        
+        if warning_msg:
+            st.warning(warning_msg)
+        
+        valid_result = False
 
-            effect_size = input_effect_size(default=0.5)
-
-            warning_msg = validate_effect_size_direction_sample_equal_variance(
-                effect_size=effect_size,
+        try:
+            n_required = sample_size_one_sample_ttest(
+                effect_size=effect_size, 
+                power_target=power_target, 
+                alpha=alpha, 
                 alternative=alternative)
+            valid_result = True
+        except ValueError as e:
+            st.warning(str(e))
             
-            if warning_msg:
-                st.warning(warning_msg)
-            
-            valid_result = False
-
-            try:
-                n1_required, n2_required = sample_size_two_sample_ttest_equal_variance(
-                    effect_size=effect_size, 
-                    power_target=power_target, 
-                    alpha=alpha, 
-                    alternative=alternative, 
-                    allocation_ratio=sample_size_ratio)
-                valid_result = True
-            except ValueError as e:
-                st.warning(str(e))
-                
-        else:
-
-            mu1 = input_mean(group_label="₁", default=0.0)
-            mu2 = input_mean(group_label="₂", default=0.0)
-            s1 = input_std(group_label="₁", default=1.0)
-            s2 = input_std(group_label="₂", default=1.0)
-            
-            warning_msg = validate_effect_size_direction_sample_unequal_variance(
-                mu1=mu1,
-                mu2=mu2,
-                s1=s1,
-                s2=s2,
-                alternative=alternative)
-            
-            if warning_msg:
-                st.warning(warning_msg)
-
-            valid_result = False
-
-            try:
-                n1_required, n2_required = sample_size_two_sample_ttest_unequal_variance(
-                    mu1=mu1,
-                    mu2=mu2,
-                    s1=s1,
-                    s2=s2, 
-                    power_target=power_target, 
-                    alpha=alpha, 
-                    alternative=alternative, 
-                    allocation_ratio=sample_size_ratio)
-                valid_result=True
-            except ValueError as e:
-                st.warning(str(e))
-            
-        if st.button("Calculate Sample Size") and valid_result:
-            st.success(f"Required Sample Sizes:\n- Group 1: **{int(n1_required)}**\n- Group 2: **{int(n2_required)}**")
+        if st.button("Calculate Sample Size", key="calc_sample_one_sample") and valid_result:
+            st.success(f"Required Sample Size: **{int(n_required)}**")
         
             if warning_msg:
                 pass
             else:
-
-                if variance_type == "Equal Variances":
-                    plot_power_curve_two_sample_ttest_equal_variance(
-                        effect_size=effect_size, 
-                        alpha=alpha,
-                        power_target=power_target,
-                        alternative=alternative, 
-                        allocation_ratio=sample_size_ratio, 
-                        max_n1=n1_required*3)
-                    
-                else:
-                    plot_power_curve_two_sample_ttest_unequal_variance(
-                        mu1=mu1,
-                        mu2=mu2,
-                        s1=s1,
-                        s2=s2, 
-                        alpha=alpha,
-                        power_target=power_target,
-                        alternative=alternative, 
-                        allocation_ratio=sample_size_ratio, 
-                        max_n1=n1_required*3)
+                plot_power_curve_one_sample_ttest(
+                    effect_size=effect_size, 
+                    alpha=alpha,
+                    power_target=power_target,
+                    alternative=alternative, 
+                    max_n=n_required*3)
                     
     elif mode == "Effect Size":
 
-        n1 = input_sample_size(group_label="Group 1 Sample Size", default=50)
-        n2 = input_sample_size(group_label="Group 2 Sample Size", default=50)
-        
-        power_target = input_power(default=0.8)
+        col1, col2 = st.columns(2)
 
-        effect_size = effect_size_two_sample_ttest(n1, n2, power_target, alpha, alternative)
-        st.success(f"Effect Size: **{effect_size:.3f}**")
+        with col1:
+            n = input_sample_size(group_label="Sample Size", key="n_effect_one_sample", default=50)
+        with col2:
+            power_target = input_power(key="power_effect_one_sample", default=0.8)
+
+        effect_size = effect_size_one_sample_ttest(
+            n=n, 
+            power_target=power_target, 
+            alpha=alpha, 
+            alternative=alternative)
+                
+        if st.button("Calculate Effect Size", key="calc_effect_one_sample"):
+            st.success(f"Effect Size: **{effect_size:.3f}**")
 
 with tab[1]:
     
@@ -309,17 +273,22 @@ with tab[1]:
     st.latex(alt_hypothesis)
 
     # Power or sample size mode
-    mode = st.radio("What do you want to calculate?", options=["Power", "Sample Size", "Effect Size"])
+    mode = st.radio(
+        label="What do you want to calculate?", 
+        options=["Power", "Sample Size", "Effect Size"],
+        key="mode_two_sample_t"
+    )
 
     if mode == "Power":
 
         col1, col2 = st.columns(2)
 
         if variance_type == "Equal Variances":
-
-            n1 = input_sample_size(group_label="Group 1 Sample Size", default=50)
-            n2 = input_sample_size(group_label="Group 2 Sample Size", default=50)
-            effect_size = input_effect_size(default=0.5)
+            with col1:
+                n1 = input_sample_size(group_label="Group 1 Sample Size", key="n1_power_two_sample",default=50)
+                effect_size = input_effect_size(key="effect_power_two_sample", default=0.5)
+            with col2:
+                n2 = input_sample_size(group_label="Group 2 Sample Size", key="n2_power_two_sample", default=50)
 
             power, df = power_two_sample_ttest_equal_variance(
                 effect_size=effect_size, 
@@ -330,13 +299,13 @@ with tab[1]:
 
         else:
             with col1:
-                n1 = input_sample_size(group_label="Group 1 Sample Size", default=50)
-                mu1 = input_mean(group_label="₁", default=0.0)
-                s1 = input_std(group_label="₁", default=1.0)
+                n1 = input_sample_size(group_label="Group 1 Sample Size", key="n1_power_two_sample2", default=50)
+                mu1 = input_mean(group_label="₁", key="mu1_power_two_sample", default=0.0)
+                s1 = input_std(group_label="₁", key="s1_power_two_sample", default=1.0)
             with col2:
-                n2 = input_sample_size(group_label="Group 2 Sample Size", default=50)            
-                mu2 = input_mean(group_label="₂", default=0.0)
-                s2 = input_std(group_label="₂", default=1.0)
+                n2 = input_sample_size(group_label="Group 2 Sample Size", key="n2_power_two_sample2", default=50)            
+                mu2 = input_mean(group_label="₂", key="mu2_power_two_sample", default=0.0)
+                s2 = input_std(group_label="₂", key="s2_power_two_sample", default=1.0)
 
             power, effect_size, df = power_two_sample_ttest_unequal_variance(
                 n1=n1, 
@@ -357,7 +326,7 @@ with tab[1]:
         if warning_msg:
             st.warning(warning_msg)
 
-        if st.button("Calculate Power"):
+        if st.button("Calculate Power", key="calc_power_two_sample"):
             st.success(f"Estimated Power: **{power:.3f}**")
 
             plot_power_curve_with_distributions_two_sample_ttest(
@@ -370,12 +339,17 @@ with tab[1]:
 
     elif mode == "Sample Size":
 
-        power_target = input_power(default=0.8)
-        sample_size_ratio = input_sample_ratio(default=1.0)
+        col1, col2 = st.columns(2)
+
+        with col1:
+            power_target = input_power(key="power_sample_two_sample", default=0.8)
+        with col2:
+            sample_size_ratio = input_sample_ratio(key="ratio_sample_two_sample", default=1.0)
 
         if variance_type == "Equal Variances":
 
-            effect_size = input_effect_size(default=0.5)
+            with col1:
+                effect_size = input_effect_size(key="effect_sample_two_sample", default=0.5)
 
             warning_msg = validate_effect_size_direction_sample_equal_variance(
                 effect_size=effect_size,
@@ -399,10 +373,12 @@ with tab[1]:
                 
         else:
 
-            mu1 = input_mean(group_label="₁", default=0.0)
-            mu2 = input_mean(group_label="₂", default=0.0)
-            s1 = input_std(group_label="₁", default=1.0)
-            s2 = input_std(group_label="₂", default=1.0)
+            with col1:
+                mu1 = input_mean(group_label="₁", key="mu1_sample_two_sample", default=0.0)
+                s1 = input_std(group_label="₁", key="s1_sample_two_sample", default=1.0)
+            with col2:
+                mu2 = input_mean(group_label="₂", key="mu2_sample_two_sample", default=0.0)
+                s2 = input_std(group_label="₂", key="s2_sample_two_sample", default=1.0)
             
             warning_msg = validate_effect_size_direction_sample_unequal_variance(
                 mu1=mu1,
@@ -430,7 +406,7 @@ with tab[1]:
             except ValueError as e:
                 st.warning(str(e))
             
-        if st.button("Calculate Sample Size") and valid_result:
+        if st.button("Calculate Sample Size", key="calc_sample_two_sample") and valid_result:
             st.success(f"Required Sample Sizes:\n- Group 1: **{int(n1_required)}**\n- Group 2: **{int(n2_required)}**")
         
             if warning_msg:
@@ -460,10 +436,15 @@ with tab[1]:
                     
     elif mode == "Effect Size":
 
-        n1 = input_sample_size(group_label="Group 1 Sample Size", default=50)
-        n2 = input_sample_size(group_label="Group 2 Sample Size", default=50)
-        
-        power_target = input_power(default=0.8)
+        col1, col2 = st.columns(2)
 
+        with col1:
+            n1 = input_sample_size(group_label="Group 1 Sample Size", key="n1_effect_two_sample", default=50)
+            power_target = input_power(key="power_effect_two_sample", default=0.8)
+        with col2:
+            n2 = input_sample_size(group_label="Group 2 Sample Size", key="n2_effect_two_sample", default=50)
+        
         effect_size = effect_size_two_sample_ttest(n1, n2, power_target, alpha, alternative)
-        st.success(f"Effect Size: **{effect_size:.3f}**")
+
+        if st.button("Calculate Effect Size", key="calc_effect_two_sample"):
+            st.success(f"Effect Size: **{effect_size:.3f}**")
