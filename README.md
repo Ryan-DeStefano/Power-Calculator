@@ -1,6 +1,6 @@
 # Power Calculator for One- and Two-Sample *t*-Tests
 
-This project is a Streamlit-based web application for calculating statistical power, required sample size, or detectable effect size for one- and two-sample *t*-tests. All calculations are implemented from scratch in Python — no built-in power analysis libraries are used — to provide a transparent and educational approach to hypothesis testing design.
+This project is a Streamlit-based web application for calculating statistical power, required sample size, or detectable effect size for one- and two-sample *t*-tests. All calculations are implemented from scratch in Python, no built-in power analysis libraries are used, to provide an educational approach to hypothesis testing design.
 
 ## 🔍 Features
 
@@ -12,7 +12,6 @@ This project is a Streamlit-based web application for calculating statistical po
   - **One-sample** *t*-tests
   - **Two-sample** (independent) *t*-tests
 - Interactive UI via **Streamlit**
-- Fully custom implementation based on core statistical theory
 
 ## 📂 Project Structure
 
@@ -38,32 +37,19 @@ git clone https://github.com/your-username/your-repo-name.git
 cd your-repo-name
 ```
 
-### 2. (Optional) Create and activate a virtual environment
-
-```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate (Linux/macOS)
-source venv/bin/activate
-
-# Activate (Windows)
-venv\Scripts\activate
-```
-
-### 3. Install dependencies
+### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Run the Streamlit app
+### 3. Run the Streamlit app
 
 ```bash
 streamlit run power_app.py
 ```
 
-### 5. Open in browser
+### 4. Open in browser
 
 Once started, the app should open automatically at:
 
@@ -82,14 +68,3 @@ Power analysis is a key part of experimental design, yet built-in functions in m
 - Determining the minimum sample size needed to detect a specific effect
 - Exploring the relationship between power, effect size, and sample size
 - Teaching or learning about the statistical foundations of hypothesis testing
-
-## 🛠️ Technologies
-
-- Python
-- Streamlit
-- NumPy
-- SciPy (used only for validation/comparison)
-
-## 📜 License
-
-MIT License — feel free to use, modify, and share.
